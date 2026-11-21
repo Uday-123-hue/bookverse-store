@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}My Orders — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-serif-editorial text-3xl font-bold text-navy">My Orders</h1>
+      <p class="text-sm text-navy/65 mt-1">Signed in as {{ current_customer.fullName }} ({{ current_customer.email }})</p>
+    </div>
+    <a href="{{ url_for('shop') }}" class="px-5 py-2.5 rounded-xl bg-navy text-cream text-xs font-semibold hover:bg-terracotta transition w-fit">Continue Shopping</a>
+  </div>
+
+  {% if orders %}
+  <div class="space-y-4">
+    {% for order in orders %}
+    <div class="bg-white rounded-2xl border border-sand p-6 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-sand pb-4">
+        <div>
+          <span class="font-bold text-navy text-base">{{ order.orderId }}</span>
+          <span class="text-xs text-navy/60 ml-2">Placed on {{ order.date }}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+          <span class="px-3 py-1 rounded-full bg-cream border border-sand text-navy">{{ order.paymentMethod }} · {{ order.paymentStatus }}</span>
+          <span class="px-3 py-1 rounded-full
+            {% if order.orderStatus == 'Delivered' %}bg-emerald-50 text-emerald-800 border border-emerald-200
+            {% elif order.orderStatus == 'Cancelled' %}bg-red-50 text-red-800 border border-red-200
+            {% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
+            {{ order.orderStatus }}
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+        <div class="md:col-span-7 space-y-1">
+          {% for item in order['items'] %}
+            <p class="text-sm text-navy">
+              <strong>{{ item.bookTitle }}</strong>
+              <span class="text-xs text-navy/65">× {{ item.quantity }} (₹{{ "%.0f"|format(item.unitPrice) }})</span>
+            </p>
+          {% endfor %}
+        </div>
+        <div class="md:col-span-2 text-sm">
+          <p class="text-xs text-navy/60">Total ({{ order.computedQty }} items)</p>
+          <p class="font-bold text-navy text-base">₹{{ "%.2f"|format(order.computedTotal) }}</p>
+        </div>
+        <div class="md:col-span-3 flex flex-wrap md:justify-end gap-2">
+          <a href="{{ url_for('receipt', order_id=order.orderId) }}" class="px-3.5 py-2 rounded-xl bg-navy text-cream text-xs font-semibold hover:bg-terracotta transition">View Receipt</a>
+          {% if order['items'] %}
+            <a href="{{ url_for('reviews', book_id=order['items'][0].bookId) }}" class="px-3.5 py-2 rounded-xl border border-sand text-xs font-semibold hover:bg-cream">Write Review</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-2xl border border-sand p-12 text-center space-y-4">
+    <p class="font-serif-editorial text-2xl font-bold text-navy">No orders yet</p>
+    <p class="text-sm text-navy/65">Your purchase history and downloadable receipts will appear here.</p>
+    <a href="{{ url_for('shop') }}" class="inline-block px-6 py-3 rounded-xl bg-navy text-cream text-sm font-semibold">Explore Books</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Account &amp; Admin Access — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <!-- Tab Links -->
+  <div class="flex justify-center gap-2 mb-8">
+    <a href="{{ url_for('login', tab='login') }}" class="px-5 py-2.5 rounded-full text-sm font-semibold {{ 'bg-navy text-cream' if tab == 'login' else 'bg-white border border-sand text-navy' }}">Customer Login</a>
+    <a href="{{ url_for('login', tab='signup') }}" class="px-5 py-2.5 rounded-full text-sm font-semibold {{ 'bg-navy text-cream' if tab == 'signup' else 'bg-white border border-sand text-navy' }}">Create Account</a>
+    <a href="{{ url_for('login', tab='admin') }}" class="px-5 py-2.5 rounded-full text-sm font-semibold {{ 'bg-terracotta text-white' if tab == 'admin' else 'bg-white border border-sand text-navy' }}">Admin BI Login</a>
+  </div>
+
+  {% if tab == 'signup' %}
+  <div class="bg-white rounded-3xl border border-sand p-8 max-w-2xl mx-auto">
+    <h1 class="font-serif-editorial text-2xl font-bold text-navy mb-2">Join BookVerse</h1>
+    <p class="text-xs text-navy/65 mb-6">Create your reader profile to place orders, track deliveries, and earn Verified Reader badges.</p>
+    <form action="{{ url_for('customer_signup') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="full_name" required placeholder="Full Name" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <input type="email" name="email" required placeholder="Email Address" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <input type="text" name="phone" required placeholder="Phone Number" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <input type="text" name="city" required placeholder="City" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <select name="gender" required class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+        <option value="">Select Gender</option>
+        {% for g in genders %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+      </select>
+      <select name="age_group" required class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+        <option value="">Select Age Group</option>
+        {% for a in age_groups %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+      </select>
+      <input type="password" name="password" required minlength="6" placeholder="Password (min 6 chars)" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <input type="password" name="confirm_password" required minlength="6" placeholder="Confirm Password" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <button type="submit" class="sm:col-span-2 py-3 rounded-xl bg-navy text-cream font-semibold text-sm hover:bg-terracotta transition">Create Reader Account</button>
+    </form>
+  </div>
+
+  {% elif tab == 'admin' %}
+  <div class="bg-white rounded-3xl border border-sand p-8 max-w-md mx-auto">
+    <h1 class="font-serif-editorial text-2xl font-bold text-navy mb-2">BI Admin Portal</h1>
+    <p class="text-xs text-navy/65 mb-6">Authorized administrators only. Credentials are configured via environment variables.</p>
+    <form action="{{ url_for('admin_login') }}" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="username" required placeholder="Admin Username" class="w-full px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <input type="password" name="password" required placeholder="Admin Password" class="w-full px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <button type="submit" class="w-full py-3 rounded-xl bg-terracotta text-white font-semibold text-sm hover:bg-navy transition">Sign In to BI Dashboard</button>
+    </form>
+  </div>
+
+  {% else %}
+  <div class="bg-white rounded-3xl border border-sand p-8 max-w-md mx-auto">
+    <h1 class="font-serif-editorial text-2xl font-bold text-navy mb-2">Welcome Back</h1>
+    <p class="text-xs text-navy/65 mb-6">Demo customer: <strong>aarav@example.com</strong> / <strong>Reader@123</strong></p>
+    <form action="{{ url_for('customer_login') }}" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+      <input type="email" name="email" required placeholder="Email Address" class="w-full px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <input type="password" name="password" required placeholder="Password" class="w-full px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      <button type="submit" class="w-full py-3 rounded-xl bg-navy text-cream font-semibold text-sm hover:bg-terracotta transition">Sign In</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

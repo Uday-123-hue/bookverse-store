@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Checkout — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <h1 class="font-serif-editorial text-3xl font-bold text-navy mb-6">Checkout &amp; Simulated Payment</h1>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <form action="{{ url_for('place_order') }}" method="POST" class="lg:col-span-7 bg-white rounded-2xl border border-sand p-6 space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2 class="font-serif-editorial text-xl font-bold text-navy">Delivery Details</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <input type="text" name="customer_name" required value="{{ current_customer.fullName }}" placeholder="Full Name" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+        <input type="email" name="email" required value="{{ current_customer.email }}" placeholder="Email" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+        <input type="text" name="phone" required value="{{ current_customer.phone }}" placeholder="Phone" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+        <input type="text" name="city" required value="{{ current_customer.city }}" placeholder="City" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+        <input type="text" name="state" required placeholder="State" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+        <input type="text" name="pin_code" required placeholder="PIN Code" class="px-4 py-3 rounded-xl border border-sand bg-cream text-sm">
+      </div>
+
+      <textarea name="delivery_address" rows="3" required placeholder="Full Street Address, Landmark..." class="w-full px-4 py-3 rounded-xl border border-sand bg-cream text-sm"></textarea>
+
+      <div class="pt-2">
+        <h2 class="font-serif-editorial text-xl font-bold text-navy mb-3">Payment Method (Simulated)</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {% for pm in payment_methods %}
+          <label class="flex items-center gap-2 p-3.5 rounded-xl border border-sand bg-cream cursor-pointer text-sm font-medium">
+            <input type="radio" name="payment_method" value="{{ pm }}" {% if loop.first %}checked{% endif %}>
+            <span>{{ pm }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="text-[11px] text-navy/60 mt-2">Payments are simulated for demo purposes. No card numbers, CVV, or UPI PINs are collected or stored.</p>
+      </div>
+
+      <button type="submit" class="w-full py-3.5 rounded-xl bg-terracotta text-white font-semibold text-sm hover:bg-navy transition">
+        Confirm &amp; Place Order (₹{{ "%.2f"|format(total) }})
+      </button>
+    </form>
+
+    <div class="lg:col-span-5 bg-white rounded-2xl border border-sand p-6 h-fit space-y-4">
+      <h2 class="font-serif-editorial text-xl font-bold text-navy">Order Summary</h2>
+      <div class="space-y-3">
+        {% for item in items %}
+        <div class="flex justify-between text-sm pb-3 border-b border-sand">
+          <div>
+            <p class="font-semibold text-navy">{{ item.book.title }}</p>
+            <p class="text-xs text-navy/65">Qty {{ item.quantity }} × ₹{{ "%.0f"|format(item.book.price) }}</p>
+          </div>
+          <span class="font-bold text-navy">₹{{ "%.2f"|format(item.subtotal) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="flex justify-between items-center pt-2 text-lg font-bold text-navy">
+        <span>Total Payable</span>
+        <span>₹{{ "%.2f"|format(total) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

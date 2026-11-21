@@ -1,0 +1,26 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Environment & Secrets
+.env
+*.key
+*.pem
+
+# Generated Runtime Data (Keep out of production git commits)
+customers.json
+orders.xlsx
+orders_backup.csv
+reviews_backup.csv
+inventory_backup.csv
+local_store.json
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

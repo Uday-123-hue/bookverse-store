@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Publishing Intelligence — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+  <!-- Split Top Section: Editorial Banner (Left) + 2x2 Analyst KPI Matrix (Right) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div class="lg:col-span-5 bg-navy text-cream rounded-3xl p-6 flex flex-col justify-between">
+      <div>
+        <span class="text-[11px] uppercase tracking-widest text-gold font-semibold">Publishing &amp; Inventory BI</span>
+        <h1 class="font-serif-editorial text-2xl sm:text-3xl font-bold text-white mt-1.5">BookVerse Analytics Studio</h1>
+        <p class="text-xs text-cream/75 mt-2 leading-relaxed">
+          Real-time catalog sell-through, publisher margin tracking, and reader cohort insights synced with 8-sheet Excel reporting.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mt-6 pt-4 border-t border-white/15">
+        <a href="{{ url_for('admin_inventory') }}" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold">Inventory Manager</a>
+        <a href="{{ url_for('admin_download_excel') }}" class="px-3.5 py-2 rounded-xl bg-terracotta hover:bg-gold text-white text-xs font-semibold">Export 8-Sheet Excel</a>
+        <form action="{{ url_for('admin_reset_demo_data') }}" method="POST" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="px-3.5 py-2 rounded-xl border border-white/25 hover:bg-white/10 text-xs font-semibold">Reset Data</button>
+        </form>
+        <form action="{{ url_for('logout') }}" method="POST" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="role" value="admin">
+          <button type="submit" class="px-3.5 py-2 rounded-xl bg-red-600/85 hover:bg-red-600 text-white text-xs font-semibold">Logout</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2x2 Data Analyst KPI Matrix -->
+    <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="bg-white rounded-2xl border border-sand p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <p class="text-[11px] uppercase tracking-wider text-navy/60 font-semibold">Net Revenue</p>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">{{ kpis.margin_pct }}% Margin</span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-bold text-navy mt-2">₹{{ "%.0f"|format(kpis.total_revenue) }}</p>
+        <p class="text-xs text-navy/60 mt-1">Top Genre: <b class="text-terracotta">{{ kpis.top_genre }}</b></p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-sand p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <p class="text-[11px] uppercase tracking-wider text-navy/60 font-semibold">Gross Profit &amp; AOV</p>
+          <span class="px-2 py-0.5 rounded-full bg-cream border border-sand text-navy text-[11px] font-bold">AOV ₹{{ "%.0f"|format(kpis.avg_order_value) }}</span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-bold text-emerald-700 mt-2">₹{{ "%.0f"|format(kpis.gross_profit) }}</p>
+        <p class="text-xs text-navy/60 mt-1">Across <b class="text-navy">{{ kpis.total_orders }}</b> orders ({{ kpis.total_books_sold }} copies)</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-sand p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <p class="text-[11px] uppercase tracking-wider text-navy/60 font-semibold">Catalog Sell-Through</p>
+          <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold">{{ kpis.avg_basket_size }} books/order</span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-bold text-terracotta mt-2">{{ kpis.sell_through_pct }}%</p>
+        <p class="text-xs text-navy/60 mt-1 truncate">Bestseller: <b class="text-navy">{{ kpis.bestseller }}</b></p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-sand p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <p class="text-[11px] uppercase tracking-wider text-navy/60 font-semibold">Stock Capital Locked</p>
+          <span class="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[11px] font-bold">{{ kpis.low_stock_books }} Low Stock</span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-bold text-navy mt-2">₹{{ "%.0f"|format(kpis.stock_cost_value) }}</p>
+        <p class="text-xs text-navy/60 mt-1">{{ kpis.active_books }} Active Titles &bull; Rating <b class="text-amber-600">★ {{ kpis.avg_rating }}</b></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power BI Style Left-Sidebar + Right-Canvas Visual Explorer -->
+  <section class="bg-white rounded-3xl border border-sand p-5 sm:p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Sidebar: Visual Mode, Metric & Dimensions -->
+      <div class="lg:col-span-4 space-y-4 bg-cream/70 p-4 rounded-2xl border border-sand">
+        <div>
+          <h2 class="font-serif-editorial text-xl font-bold text-navy">BI Visual Workbench</h2>
+          <p class="text-[11px] text-navy/65 mt-0.5">Select chart type, KPI metric, and analytical cut</p>
+        </div>
+
+        <!-- Visual Chart Style -->
+        <div>
+          <p class="text-[10px] uppercase tracking-wider font-bold text-navy/60 mb-1.5">1. Visualization Type</p>
+          <div class="grid grid-cols-2 gap-1.5">
+            {% for ct_val, ct_lbl in [('hbar', 'Horizontal Bar'), ('treemap', 'Genre Treemap'), ('area', 'Trend Area'), ('donut', 'Share Ring')] %}
+              <a href="{{ url_for('admin_dashboard', dimension=dimension, metric=metric, chart_type=ct_val) }}"
+                class="px-2.5 py-2 rounded-xl text-xs font-semibold text-center border transition {{ 'bg-navy text-cream border-navy shadow-sm' if chart_type == ct_val else 'bg-white text-navy/75 border-sand hover:border-terracotta' }}">
+                {{ ct_lbl }}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- KPI Metric -->
+        <div>
+          <p class="text-[10px] uppercase tracking-wider font-bold text-navy/60 mb-1.5">2. Financial / Volume Metric</p>
+          <div class="grid grid-cols-3 gap-1.5">
+            {% for m_val, m_lbl in [('revenue', 'Revenue'), ('gross_profit', 'Profit'), ('units_sold', 'Copies')] %}
+              <a href="{{ url_for('admin_dashboard', dimension=dimension, metric=m_val, chart_type=chart_type) }}"
+                class="px-2 py-2 rounded-xl text-xs font-semibold text-center border transition {{ 'bg-terracotta text-white border-terracotta shadow-sm' if metric == m_val else 'bg-white text-navy/75 border-sand hover:border-terracotta' }}">
+                {{ m_lbl }}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Analytical Dimensions -->
+        <div>
+          <p class="text-[10px] uppercase tracking-wider font-bold text-navy/60 mb-1.5">3. Analytical Dimension</p>
+          <div class="grid grid-cols-2 gap-1.5">
+            {% set dims = [
+              ('category', 'Genre Hierarchy'),
+              ('publisher', 'Publishers'),
+              ('author', 'Top Authors'),
+              ('book', 'Bestsellers'),
+              ('price_elasticity', 'Price vs Demand'),
+              ('stock_vs_sold', 'Stock vs Sold'),
+              ('city', 'Reader Cities'),
+              ('demographics', 'Age × Gender'),
+              ('timeline', 'Sales Timeline'),
+              ('payment_method', 'Payment Split')
+            ] %}
+            {% for d_val, d_lbl in dims %}
+              <a href="{{ url_for('admin_dashboard', dimension=d_val, metric=metric, chart_type=chart_type) }}"
+                class="px-2.5 py-1.5 rounded-lg text-xs font-medium border transition {{ 'bg-navy text-cream border-navy font-semibold' if dimension == d_val else 'bg-white text-navy/75 border-sand hover:border-terracotta' }}">
+                {{ d_lbl }}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Canvas: Plotly Interactive Chart -->
+      <div class="lg:col-span-8 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-navy/70 px-1">
+          <span>Active View: <strong class="text-navy uppercase">{{ dimension.replace('_', ' ') }}</strong></span>
+          <span>Readers: <strong class="text-navy">{{ kpis.total_customers }}</strong> &bull; Pending: <strong class="text-terracotta">{{ kpis.pending_orders }}</strong> &bull; Delivered: <strong class="text-emerald-700">{{ kpis.completed_orders }}</strong></span>
+        </div>
+        <div class="w-full overflow-hidden rounded-2xl border border-sand p-3 bg-cream/30">
+          {{ chart_html|safe }}
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Order Management Table -->
+  <section id="orders-section" class="bg-white rounded-3xl border border-sand p-6 space-y-4">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <h2 class="font-serif-editorial text-2xl font-bold text-navy">Order Management</h2>
+      <form action="{{ url_for('admin_dashboard') }}#orders-section" method="GET" class="flex flex-wrap gap-2 text-xs">
+        <input type="hidden" name="dimension" value="{{ dimension }}">
+        <input type="hidden" name="metric" value="{{ metric }}">
+        <input type="hidden" name="chart_type" value="{{ chart_type }}">
+        <input type="text" name="order_q" value="{{ request.args.get('order_q', '') }}" placeholder="Order ID, Name, Email..." class="px-3 py-2 rounded-xl border border-sand bg-cream">
+        <select name="city" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+          <option value="">All Cities</option>
+          {% for c in cities %}<option value="{{ c }}" {% if request.args.get('city') == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+        <select name="status" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+          <option value="">All Statuses</option>
+          {% for st in order_statuses %}<option value="{{ st }}" {% if request.args.get('status') == st %}selected{% endif %}>{{ st }}</option>{% endfor %}
+        </select>
+        <select name="payment" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+          <option value="">All Payments</option>
+          {% for pm in payment_methods %}<option value="{{ pm }}" {% if request.args.get('payment') == pm %}selected{% endif %}>{{ pm }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-navy text-cream font-semibold">Filter</button>
+      </form>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs text-left border-collapse">
+        <thead>
+          <tr class="border-b border-sand uppercase text-navy/60">
+            <th class="py-3 pr-3">Order</th>
+            <th class="py-3 pr-3">Customer</th>
+            <th class="py-3 pr-3">Items</th>
+            <th class="py-3 pr-3">Total</th>
+            <th class="py-3 pr-3">Update Status</th>
+            <th class="py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-sand">
+          {% for o in orders %}
+          <tr>
+            <td class="py-3 pr-3">
+              <a href="{{ url_for('receipt', order_id=o.orderId) }}" class="font-bold text-navy hover:text-terracotta">{{ o.orderId }}</a>
+              <p class="text-navy/60">{{ o.date }}</p>
+            </td>
+            <td class="py-3 pr-3">
+              <p class="font-semibold text-navy">{{ o.customerName }}</p>
+              <p class="text-navy/60">{{ o.city }} &middot; {{ o.paymentMethod }}</p>
+            </td>
+            <td class="py-3 pr-3">{{ o.computedQty }} books</td>
+            <td class="py-3 pr-3 font-bold">₹{{ "%.0f"|format(o.computedTotal) }}</td>
+            <td class="py-3 pr-3">
+              <form action="{{ url_for('admin_update_order_status') }}" method="POST" class="flex flex-wrap items-center gap-1.5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="order_id" value="{{ o.orderId }}">
+                <select name="order_status" class="px-2 py-1 rounded-lg border border-sand bg-cream">
+                  {% for st in order_statuses %}<option value="{{ st }}" {% if o.orderStatus == st %}selected{% endif %}>{{ st }}</option>{% endfor %}
+                </select>
+                <select name="payment_status" class="px-2 py-1 rounded-lg border border-sand bg-cream">
+                  {% for ps in payment_statuses %}<option value="{{ ps }}" {% if o.paymentStatus == ps %}selected{% endif %}>{{ ps }}</option>{% endfor %}
+                </select>
+                <button type="submit" class="px-2.5 py-1 rounded-lg bg-navy text-cream font-semibold hover:bg-terracotta">Save</button>
+              </form>
+            </td>
+            <td class="py-3 text-right">
+              <form action="{{ url_for('admin_delete_order') }}" method="POST" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="order_id" value="{{ o.orderId }}">
+                <button type="submit" class="text-red-700 font-semibold hover:underline">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Review Moderation Table -->
+  <section id="reviews-section" class="bg-white rounded-3xl border border-sand p-6 space-y-4">
+    <h2 class="font-serif-editorial text-2xl font-bold text-navy">Review Moderation</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs text-left border-collapse">
+        <thead>
+          <tr class="border-b border-sand uppercase text-navy/60">
+            <th class="py-3 pr-3">Book</th>
+            <th class="py-3 pr-3">Reviewer</th>
+            <th class="py-3 pr-3">Rating</th>
+            <th class="py-3 pr-3">Comment</th>
+            <th class="py-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-sand">
+          {% for r in reviews %}
+          <tr>
+            <td class="py-3 pr-3 font-semibold text-navy">{{ r.bookTitle }}</td>
+            <td class="py-3 pr-3">
+              {{ r.customerName }}
+              {% if r.verifiedBuyer == 'Yes' %}<span class="text-emerald-700 font-semibold">(&#10003; Verified)</span>{% endif %}
+            </td>
+            <td class="py-3 pr-3 text-amber-600 font-bold">{{ r.rating }} ★</td>
+            <td class="py-3 pr-3 max-w-md text-navy/80">{{ r.comment }}</td>
+            <td class="py-3 text-right">
+              <form action="{{ url_for('admin_delete_review', review_id=r.reviewId) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="text-red-700 font-semibold hover:underline">Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

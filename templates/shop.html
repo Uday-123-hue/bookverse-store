@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Explore Books — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="mb-8">
+    <h1 class="font-serif-editorial text-3xl sm:text-4xl font-bold text-navy">Explore Books</h1>
+    <p class="text-sm text-navy/70 mt-1">Showing {{ books|length }} curated titles</p>
+  </div>
+
+  <!-- Server-Side Filter Bar -->
+  <form action="{{ url_for('shop') }}" method="GET" class="bg-white rounded-2xl border border-sand p-5 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <input type="text" name="q" value="{{ filters.q }}" placeholder="Title, Author, or ISBN..."
+      class="px-3.5 py-2.5 rounded-xl border border-sand text-sm bg-cream focus:outline-none focus:border-terracotta">
+
+    <select name="category" class="px-3.5 py-2.5 rounded-xl border border-sand text-sm bg-cream">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+        <option value="{{ cat.name }}" {% if filters.category == cat.name %}selected{% endif %}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="publisher" class="px-3.5 py-2.5 rounded-xl border border-sand text-sm bg-cream">
+      <option value="">All Publishers</option>
+      {% for pub in publishers %}
+        <option value="{{ pub }}" {% if filters.publisher == pub %}selected{% endif %}>{{ pub }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="sort" class="px-3.5 py-2.5 rounded-xl border border-sand text-sm bg-cream">
+      <option value="popularity" {% if filters.sort == 'popularity' %}selected{% endif %}>Sort: Popularity</option>
+      <option value="price_asc" {% if filters.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+      <option value="price_desc" {% if filters.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+      <option value="alpha" {% if filters.sort == 'alpha' %}selected{% endif %}>Alphabetical (A–Z)</option>
+    </select>
+
+    <input type="number" name="min_price" value="{{ filters.min_price }}" placeholder="Min Price (₹)" min="0"
+      class="px-3.5 py-2.5 rounded-xl border border-sand text-sm bg-cream">
+
+    <input type="number" name="max_price" value="{{ filters.max_price }}" placeholder="Max Price (₹)" min="0"
+      class="px-3.5 py-2.5 rounded-xl border border-sand text-sm bg-cream">
+
+    <select name="min_rating" class="px-3.5 py-2.5 rounded-xl border border-sand text-sm bg-cream">
+      <option value="">Any Rating</option>
+      <option value="4.5" {% if filters.min_rating == '4.5' %}selected{% endif %}>4.5★ &amp; above</option>
+      <option value="4.0" {% if filters.min_rating == '4.0' %}selected{% endif %}>4.0★ &amp; above</option>
+    </select>
+
+    <div class="flex items-center justify-between gap-2">
+      <label class="inline-flex items-center gap-2 text-xs font-medium text-navy">
+        <input type="checkbox" name="featured" value="1" {% if filters.featured %}checked{% endif %} class="rounded">
+        Featured only
+      </label>
+      <div class="flex gap-2">
+        <a href="{{ url_for('shop') }}" class="px-3 py-2 rounded-xl border border-sand text-xs font-semibold hover:bg-cream">Reset</a>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-navy text-cream text-xs font-semibold hover:bg-terracotta transition">Apply</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Book Grid -->
+  {% if books %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {% for book in books %}
+    <div class="bg-white rounded-2xl border border-sand p-4 flex flex-col justify-between hover:shadow-md transition">
+      <div>
+        <a href="{{ url_for('book_details', book_id=book.id) }}">
+          <img src="{{ book.image }}" onerror="this.src='{{ fallback_cover }}'" alt="{{ book.title }}" class="w-full book-cover-card rounded-xl mb-4">
+        </a>
+        <div class="flex items-center justify-between text-[11px] font-semibold">
+          <span class="text-terracotta uppercase tracking-wider">{{ book.category }}</span>
+          <span class="text-amber-600">★ {{ book.rating }}</span>
+        </div>
+        <a href="{{ url_for('book_details', book_id=book.id) }}" class="block font-serif-editorial font-bold text-lg text-navy mt-1 hover:text-terracotta line-clamp-2">{{ book.title }}</a>
+        <p class="text-xs text-navy/65 mt-0.5">{{ book.author }} · {{ book.publisher }}</p>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-sand flex items-center justify-between gap-2">
+        <div>
+          <span class="text-lg font-bold text-navy">₹{{ "%.0f"|format(book.price) }}</span>
+          {% if book.stock_quantity <= 0 %}
+            <span class="block text-[11px] font-semibold text-red-600">Out of Stock</span>
+          {% elif book.stock_quantity <= 5 %}
+            <span class="block text-[11px] font-semibold text-amber-700">Only {{ book.stock_quantity }} left</span>
+          {% else %}
+            <span class="block text-[11px] text-emerald-700">In Stock ({{ book.stock_quantity }})</span>
+          {% endif %}
+        </div>
+
+        {% if book.stock_quantity > 0 %}
+        <form action="{{ url_for('add_to_cart', book_id=book.id) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit" class="px-3.5 py-2 rounded-xl bg-navy text-cream text-xs font-semibold hover:bg-terracotta transition">Add to Cart</button>
+        </form>
+        {% else %}
+          <span class="px-3 py-2 rounded-xl bg-sand text-navy/50 text-xs font-semibold">Sold Out</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-2xl border border-sand p-12 text-center">
+    <p class="font-serif-editorial text-xl font-bold text-navy">No books matched your filters.</p>
+    <a href="{{ url_for('shop') }}" class="inline-block mt-4 px-5 py-2.5 rounded-xl bg-navy text-cream text-sm font-semibold">Reset Filters</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

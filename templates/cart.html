@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Shopping Cart — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <h1 class="font-serif-editorial text-3xl font-bold text-navy mb-6">Your Shopping Cart</h1>
+
+  {% if items %}
+  <div class="bg-white rounded-2xl border border-sand p-6 space-y-6">
+    <form action="{{ url_for('update_cart') }}" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% for item in items %}
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-sand">
+        <div class="flex items-center gap-4">
+          <img src="{{ item.book.image }}" onerror="this.src='{{ fallback_cover }}'" alt="{{ item.book.title }}" class="w-16 h-24 object-cover rounded-lg">
+          <div>
+            <a href="{{ url_for('book_details', book_id=item.book.id) }}" class="font-serif-editorial font-bold text-navy hover:text-terracotta">{{ item.book.title }}</a>
+            <p class="text-xs text-navy/65">{{ item.book.author }} · ₹{{ "%.0f"|format(item.book.price) }} each</p>
+            <p class="text-[11px] text-emerald-700 mt-0.5">Available: {{ item.book.stock_quantity }}</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <input type="number" name="qty_{{ item.book.id }}" value="{{ item.quantity }}" min="0" max="{{ item.book.stock_quantity }}"
+            class="w-20 px-3 py-2 rounded-xl border border-sand bg-cream text-center text-sm font-semibold">
+          <span class="font-bold text-navy w-24 text-right">₹{{ "%.2f"|format(item.subtotal) }}</span>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <button type="submit" class="px-5 py-2.5 rounded-xl border border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition">Update Quantities</button>
+        <div class="text-right">
+          <p class="text-xs text-navy/65">Order Total</p>
+          <p class="text-2xl font-bold text-navy">₹{{ "%.2f"|format(total) }}</p>
+        </div>
+      </div>
+    </form>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-sand">
+      <form action="{{ url_for('clear_cart') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="text-xs font-semibold text-red-700 hover:underline">Clear Cart</button>
+      </form>
+      <div class="flex gap-3">
+        <a href="{{ url_for('shop') }}" class="px-5 py-3 rounded-xl border border-sand text-sm font-semibold hover:bg-cream">Continue Shopping</a>
+        <a href="{{ url_for('checkout') }}" class="px-6 py-3 rounded-xl bg-terracotta text-white text-sm font-semibold hover:bg-navy transition">Proceed to Checkout &rarr;</a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-2xl border border-sand p-12 text-center space-y-4">
+    <p class="font-serif-editorial text-2xl font-bold text-navy">Your cart is empty</p>
+    <p class="text-sm text-navy/65">Discover your next favorite read from our 10 curated categories.</p>
+    <a href="{{ url_for('shop') }}" class="inline-block px-6 py-3 rounded-xl bg-navy text-cream text-sm font-semibold hover:bg-terracotta transition">Explore Books</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

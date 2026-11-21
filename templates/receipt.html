@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Receipt {{ order.orderId }} — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="bg-white rounded-3xl border border-sand p-8 shadow-sm print-container space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sand pb-6">
+      <div>
+        <h1 class="font-serif-editorial text-3xl font-bold text-navy">{{ app_name }}</h1>
+        <p class="text-xs text-terracotta uppercase tracking-wider mt-1">{{ app_tagline }}</p>
+      </div>
+      <div class="sm:text-right">
+        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          {{ order.orderStatus }}
+        </span>
+        <p class="text-sm font-bold text-navy mt-2">{{ order.orderId }}</p>
+        <p class="text-xs text-navy/60">Date: {{ order.date }}</p>
+      </div>
+    </div>
+
+    <!-- Customer & Payment Info -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+      <div class="p-4 rounded-xl bg-cream border border-sand space-y-1">
+        <p class="text-xs uppercase tracking-wider text-terracotta font-semibold">Billed &amp; Shipped To</p>
+        <p class="font-bold text-navy">{{ order.customerName }}</p>
+        <p class="text-navy/75">{{ order.customerEmail }} · {{ order.customerPhone }}</p>
+        <p class="text-navy/75">{{ order.deliveryAddress }}</p>
+        <p class="text-navy/75">{{ order.city }}, {{ order.state }} {{ order.pinCode }}</p>
+      </div>
+      <div class="p-4 rounded-xl bg-cream border border-sand space-y-1">
+        <p class="text-xs uppercase tracking-wider text-terracotta font-semibold">Payment Summary</p>
+        <p><span class="text-navy/65">Method:</span> <strong>{{ order.paymentMethod }}</strong></p>
+        <p><span class="text-navy/65">Payment Status:</span> <strong>{{ order.paymentStatus }}</strong></p>
+        <p><span class="text-navy/65">Order Status:</span> <strong>{{ order.orderStatus }}</strong></p>
+      </div>
+    </div>
+
+    <!-- Itemized Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left border-collapse">
+        <thead>
+          <tr class="border-b border-sand text-xs uppercase text-navy/60">
+            <th class="py-3">Book Title</th>
+            <th class="py-3 text-center">Qty</th>
+            <th class="py-3 text-right">Unit Price</th>
+            <th class="py-3 text-right">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-sand">
+          {% for item in order['items'] %}
+          <tr>
+            <td class="py-3">
+              <p class="font-semibold text-navy">{{ item.bookTitle }}</p>
+              <p class="text-xs text-navy/60">{{ item.author }} · {{ item.category }}</p>
+            </td>
+            <td class="py-3 text-center">{{ item.quantity }}</td>
+            <td class="py-3 text-right">₹{{ "%.2f"|format(item.unitPrice) }}</td>
+            <td class="py-3 text-right font-semibold">₹{{ "%.2f"|format(item.totalAmount) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Total -->
+    <div class="flex justify-end border-t border-sand pt-4">
+      <div class="w-full sm:w-64 space-y-2 text-sm">
+        <div class="flex justify-between text-navy/70">
+          <span>Subtotal</span>
+          <span>₹{{ "%.2f"|format(total) }}</span>
+        </div>
+        <div class="flex justify-between text-navy/70">
+          <span>Shipping</span>
+          <span class="text-emerald-700 font-semibold">FREE</span>
+        </div>
+        <div class="flex justify-between text-lg font-bold text-navy border-t border-sand pt-2">
+          <span>Total Amount</span>
+          <span>₹{{ "%.2f"|format(total) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-sand no-print">
+      <div class="flex flex-wrap gap-2">
+        <a href="{{ url_for('download_invoice_pdf', order_id=order.orderId) }}"
+          class="px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 transition">
+          Download PDF Invoice
+        </a>
+        <button type="button" onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-navy text-cream text-xs font-semibold hover:bg-terracotta transition">
+          Print Receipt
+        </button>
+        <a href="mailto:{{ order.customerEmail }}?subject=BookVerse%20Order%20Receipt%20{{ order.orderId }}&body=Thank%20you%20for%20ordering%20from%20BookVerse.%20Order%20ID:%20{{ order.orderId }}%20|%20Total:%20INR%20{{ total }}"
+          class="px-4 py-2.5 rounded-xl border border-sand text-xs font-semibold hover:bg-cream">
+          Share via Email
+        </a>
+        <a href="{{ url_for('reviews', book_id=order['items'][0].bookId if order['items'] else '') }}"
+          class="px-4 py-2.5 rounded-xl bg-terracotta text-white text-xs font-semibold hover:bg-navy transition">
+          Rate Books
+        </a>
+      </div>
+      <a href="{{ url_for('my_orders') }}" class="text-xs font-semibold text-navy hover:underline">View All Orders &rarr;</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

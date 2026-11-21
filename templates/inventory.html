@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Inventory Management — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <a href="{{ url_for('admin_dashboard') }}" class="text-xs font-semibold text-terracotta hover:underline">&larr; Back to BI Dashboard</a>
+      <h1 class="font-serif-editorial text-3xl font-bold text-navy mt-1">Inventory Management</h1>
+    </div>
+    <div class="flex gap-4 text-xs">
+      <div class="bg-white rounded-xl border border-sand px-4 py-2.5">
+        <span class="text-navy/60 block">Stock Valuation (Cost)</span>
+        <strong class="text-base text-navy">₹{{ "%.0f"|format(total_valuation) }}</strong>
+      </div>
+      <div class="bg-white rounded-xl border border-sand px-4 py-2.5">
+        <span class="text-navy/60 block">Retail Value</span>
+        <strong class="text-base text-emerald-700">₹{{ "%.0f"|format(retail_valuation) }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New Book -->
+  <details class="bg-white rounded-2xl border border-sand p-5">
+    <summary class="cursor-pointer font-serif-editorial text-lg font-bold text-navy">+ Add New Book to Catalog</summary>
+    <form action="{{ url_for('admin_add_book') }}" method="POST" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="title" required placeholder="Book Title" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <input type="text" name="author" required placeholder="Author" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <input type="text" name="publisher" placeholder="Publisher" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <input type="text" name="isbn" placeholder="ISBN" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <select name="category" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+        {% for cat in categories %}<option value="{{ cat.name }}">{{ cat.name }}</option>{% endfor %}
+      </select>
+      <input type="number" name="price" required min="1" step="0.01" placeholder="Selling Price (₹)" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <input type="number" name="cost_price" required min="0" step="0.01" placeholder="Cost Price (₹)" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <input type="number" name="stock_quantity" required min="0" placeholder="Initial Stock" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <input type="url" name="image" placeholder="Cover Image URL (optional)" class="sm:col-span-2 px-3 py-2 rounded-xl border border-sand bg-cream">
+      <input type="text" name="description" placeholder="Short description" class="sm:col-span-2 px-3 py-2 rounded-xl border border-sand bg-cream">
+      <button type="submit" class="sm:col-span-2 lg:col-span-4 py-2.5 rounded-xl bg-navy text-cream font-semibold hover:bg-terracotta transition">Add Book</button>
+    </form>
+  </details>
+
+  <!-- Filter Bar -->
+  <form action="{{ url_for('admin_inventory') }}" method="GET" class="bg-white rounded-2xl border border-sand p-4 flex flex-wrap items-center gap-3 text-xs">
+    <input type="text" name="q" value="{{ filters.q }}" placeholder="Search title, author, ID..." class="px-3 py-2 rounded-xl border border-sand bg-cream">
+    <select name="category" class="px-3 py-2 rounded-xl border border-sand bg-cream">
+      <option value="">All Categories</option>
+      {% for cat in categories %}<option value="{{ cat.name }}" {% if filters.category == cat.name %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+    </select>
+    <label class="inline-flex items-center gap-1.5 font-semibold text-amber-800">
+      <input type="checkbox" name="low_stock" value="1" {% if filters.low_stock %}checked{% endif %}> Low Stock Only (&le;5)
+    </label>
+    <button type="submit" class="px-4 py-2 rounded-xl bg-navy text-cream font-semibold">Apply</button>
+    <a href="{{ url_for('admin_inventory') }}" class="px-3 py-2 rounded-xl border border-sand">Reset</a>
+  </form>
+
+  <!-- Inventory Table -->
+  <div class="bg-white rounded-2xl border border-sand p-5 overflow-x-auto">
+    <table class="w-full text-xs text-left border-collapse">
+      <thead>
+        <tr class="border-b border-sand uppercase text-navy/60">
+          <th class="py-3 pr-3">Book</th>
+          <th class="py-3 pr-3">Status</th>
+          <th class="py-3 pr-3">Sold</th>
+          <th class="py-3 pr-3">Stock Value</th>
+          <th class="py-3 pr-3">Edit Price / Cost / Stock / Visibility</th>
+          <th class="py-3 text-right">Remove</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-sand">
+        {% for b in books %}
+        <tr>
+          <td class="py-3 pr-3">
+            <p class="font-bold text-navy">{{ b.title }}</p>
+            <p class="text-navy/60">{{ b.id }} · {{ b.category }}</p>
+          </td>
+          <td class="py-3 pr-3">
+            {% if b.stock_quantity <= 0 %}
+              <span class="px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200 font-semibold">Out of Stock</span>
+            {% elif b.stock_quantity <= 5 %}
+              <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-semibold">Low Stock ({{ b.stock_quantity }})</span>
+            {% else %}
+              <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">Healthy ({{ b.stock_quantity }})</span>
+            {% endif %}
+          </td>
+          <td class="py-3 pr-3 font-semibold">{{ b.units_sold }}</td>
+          <td class="py-3 pr-3 font-semibold">₹{{ "%.0f"|format(b.stock_value_cost) }}</td>
+          <td class="py-3 pr-3">
+            <form action="{{ url_for('admin_edit_book', book_id=b.id) }}" method="POST" class="flex flex-wrap items-center gap-1.5">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="number" name="price" value="{{ b.price }}" step="1" class="w-16 px-2 py-1 rounded border border-sand bg-cream" title="Selling Price">
+              <input type="number" name="cost_price" value="{{ b.cost_price }}" step="1" class="w-16 px-2 py-1 rounded border border-sand bg-cream" title="Cost Price">
+              <input type="number" name="stock_quantity" value="{{ b.stock_quantity }}" min="0" class="w-14 px-2 py-1 rounded border border-sand bg-cream" title="Stock">
+              <label class="inline-flex items-center gap-1"><input type="checkbox" name="active" value="1" {% if b.active %}checked{% endif %}>Active</label>
+              <label class="inline-flex items-center gap-1"><input type="checkbox" name="featured" value="1" {% if b.featured %}checked{% endif %}>Feat</label>
+              <button type="submit" class="px-2.5 py-1 rounded bg-navy text-cream font-semibold hover:bg-terracotta">Save</button>
+            </form>
+          </td>
+          <td class="py-3 text-right">
+            <form action="{{ url_for('admin_delete_book', book_id=b.id) }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="text-red-700 font-semibold hover:underline">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
